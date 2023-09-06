@@ -18,17 +18,19 @@ enum ENUM_STG_MA_CROSS_SUP_RES_TYPE {
 
 // User params.
 INPUT_GROUP("MA Cross Sup/Res strategy: main strategy params");
-INPUT ENUM_STG_MA_CROSS_SUP_RES_TYPE MA_Cross_Sup_Res_Type = STG_MA_CROSS_SUP_RES_TYPE_DEMA;  // Indicator MA type
+INPUT ENUM_STG_MA_CROSS_SUP_RES_TYPE MA_Cross_Sup_Res_Type =
+    STG_MA_CROSS_SUP_RES_TYPE_TEMA;                        // MA Cross Sup/Res: Indicator MA type
+INPUT ENUM_PP_TYPE MA_Cross_Sup_Res_Calc_Mode = PP_FLOOR;  // Support/Resistance calculation mode
 INPUT_GROUP("MA Cross Sup/Res strategy: strategy params");
 INPUT float MA_Cross_Sup_Res_LotSize = 0;                // Lot size
 INPUT int MA_Cross_Sup_Res_SignalOpenMethod = 1;         // Signal open method (-3-3)
-INPUT float MA_Cross_Sup_Res_SignalOpenLevel = 0.0f;     // Signal open level
+INPUT float MA_Cross_Sup_Res_SignalOpenLevel = 0.5f;     // Signal open level
 INPUT int MA_Cross_Sup_Res_SignalOpenFilterMethod = 32;  // Signal open filter method
 INPUT int MA_Cross_Sup_Res_SignalOpenFilterTime = 3;     // Signal open filter time
 INPUT int MA_Cross_Sup_Res_SignalOpenBoostMethod = 0;    // Signal open boost method
 INPUT int MA_Cross_Sup_Res_SignalCloseMethod = 1;        // Signal close method (-3-3)
 INPUT int MA_Cross_Sup_Res_SignalCloseFilter = 0;        // Signal close filter (-127-127)
-INPUT float MA_Cross_Sup_Res_SignalCloseLevel = 0.0f;    // Signal close level
+INPUT float MA_Cross_Sup_Res_SignalCloseLevel = 0.5f;    // Signal close level
 INPUT int MA_Cross_Sup_Res_PriceStopMethod = 1;          // Price stop method (0-127)
 INPUT float MA_Cross_Sup_Res_PriceStopLevel = 2;         // Price stop level
 INPUT int MA_Cross_Sup_Res_TickFilterMethod = 32;        // Tick filter method
@@ -245,19 +247,26 @@ class Stg_MA_Cross_Sup_Res : public Strategy {
       return false;
     }
     // float _level_pips = (float)(_level * _chart.GetPipSize());
-    double _value1 = _indi[_ishift][0];
+    float _level_pips = (float)(_level * _chart.GetPipSize());
+    float _pp, _r1, _r2, _r3, _r4, _s1, _s2, _s3, _s4;
     ChartEntry _ohlc_d1 = _chart.GetEntry(PERIOD_D1, _shift + 1, _chart.GetSymbol());
-    double _d1_pivot = _ohlc_d1.bar.ohlc.GetPivot();
+    double _d1_pivot =
+        _ohlc_d1.bar.ohlc.GetPivots(::MA_Cross_Sup_Res_Calc_Mode, _pp, _r1, _r2, _r3, _r4, _s1, _s2, _s3, _s4);
+    bool _ma_cross_r1_up = _indi[_ishift][0] > _r1 + _level_pips && _indi[_ishift + 1][0] < _r1;
+    bool _ma_cross_r2_up = _indi[_ishift][0] > _r2 + _level_pips && _indi[_ishift + 1][0] < _r2;
+    bool _ma_cross_r3_up = _indi[_ishift][0] > _r3 + _level_pips && _indi[_ishift + 1][0] < _r3;
+    bool _ma_cross_r4_up = _indi[_ishift][0] > _r4 + _level_pips && _indi[_ishift + 1][0] < _r4;
+    bool _ma_cross_s1_down = _indi[_ishift][0] < _s1 - _level_pips && _indi[_ishift + 1][0] > _s1;
+    bool _ma_cross_s2_down = _indi[_ishift][0] < _s2 - _level_pips && _indi[_ishift + 1][0] > _s2;
+    bool _ma_cross_s3_down = _indi[_ishift][0] < _s3 - _level_pips && _indi[_ishift + 1][0] > _s3;
+    bool _ma_cross_s4_down = _indi[_ishift][0] < _s4 - _level_pips && _indi[_ishift + 1][0] > _s4;
     switch (_cmd) {
       case ORDER_TYPE_BUY:
         // Buy signal.
         _result &= _indi.IsIncreasing(1, 0, _ishift);
-        _result &= _indi[_shift][0] > _d1_pivot;
-        _result &= _indi[_shift + 1][0] < _d1_pivot;
-        //_result &= Math::ChangeInPct(_indi[_ishift + 1][0], _indi[_ishift][0], true) > _level;
+        _result &= (_ma_cross_r1_up || _ma_cross_r2_up || _ma_cross_r3_up || _ma_cross_r4_up);
         if (_result && _method != 0) {
-          if (METHOD(_method, 0)) _result &= _indi[_ishift + 3][0] < _d1_pivot;
-          if (METHOD(_method, 1))
+          if (METHOD(_method, 0))
             _result &= fmax4(_indi[_ishift][0], _indi[_ishift + 1][0], _indi[_ishift + 2][0], _indi[_ishift + 3][0]) ==
                        _indi[_ishift][0];
         }
@@ -265,12 +274,9 @@ class Stg_MA_Cross_Sup_Res : public Strategy {
       case ORDER_TYPE_SELL:
         // Sell signal.
         _result &= _indi.IsDecreasing(1, 0, _ishift);
-        _result &= _indi[_shift][0] < _d1_pivot;
-        _result &= _indi[_shift + 1][0] > _d1_pivot;
-        //_result &= Math::ChangeInPct(_indi[_ishift + 1][0], _indi[_ishift][0], true) < _level;
+        _result &= (_ma_cross_s1_down || _ma_cross_s2_down || _ma_cross_s3_down || _ma_cross_s4_down);
         if (_result && _method != 0) {
-          if (METHOD(_method, 0)) _result &= _indi[_ishift + 3][0] > _d1_pivot;
-          if (METHOD(_method, 1))
+          if (METHOD(_method, 0))
             _result &= fmin4(_indi[_ishift][0], _indi[_ishift + 1][0], _indi[_ishift + 2][0], _indi[_ishift + 3][0]) ==
                        _indi[_ishift][0];
         }
