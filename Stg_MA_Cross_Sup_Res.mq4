@@ -6,8 +6,8 @@
 
 /**
  * @file
- * Implements MA Cross Pivot strategy.
+ * Implements MA Cross Sup/Res strategy.
  */
 
 // Includes the main code.
-#include "Stg_MA_Cross_Pivot.mq5"
+#include "Stg_MA_Cross_Sup_Res.mq5"
