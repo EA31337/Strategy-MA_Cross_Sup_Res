@@ -106,11 +106,11 @@ struct Stg_MA_Cross_Sup_Res_Params_Defaults : StgParams {
                   ::MA_Cross_Sup_Res_SignalCloseLevel, ::MA_Cross_Sup_Res_PriceStopMethod,
                   ::MA_Cross_Sup_Res_PriceStopLevel, ::MA_Cross_Sup_Res_TickFilterMethod, ::MA_Cross_Sup_Res_MaxSpread,
                   ::MA_Cross_Sup_Res_Shift) {
-    Set(STRAT_PARAM_LS, MA_Cross_Sup_Res_LotSize);
-    Set(STRAT_PARAM_OCL, MA_Cross_Sup_Res_OrderCloseLoss);
-    Set(STRAT_PARAM_OCP, MA_Cross_Sup_Res_OrderCloseProfit);
-    Set(STRAT_PARAM_OCT, MA_Cross_Sup_Res_OrderCloseTime);
-    Set(STRAT_PARAM_SOFT, MA_Cross_Sup_Res_SignalOpenFilterTime);
+    Set(STRAT_PARAM_LS, ::MA_Cross_Sup_Res_LotSize);
+    Set(STRAT_PARAM_OCL, ::MA_Cross_Sup_Res_OrderCloseLoss);
+    Set(STRAT_PARAM_OCP, ::MA_Cross_Sup_Res_OrderCloseProfit);
+    Set(STRAT_PARAM_OCT, ::MA_Cross_Sup_Res_OrderCloseTime);
+    Set(STRAT_PARAM_SOFT, ::MA_Cross_Sup_Res_SignalOpenFilterTime);
   }
 };
 
@@ -129,7 +129,7 @@ class Stg_MA_Cross_Sup_Res : public Strategy {
     // Initialize Strategy instance.
     ChartParams _cparams(_tf, _Symbol);
     TradeParams _tparams;
-    Strategy *_strat = new Stg_MA_Cross_Sup_Res(_stg_params, _tparams, _cparams, "MA");
+    Strategy *_strat = new Stg_MA_Cross_Sup_Res(_stg_params, _tparams, _cparams, "MA Cross Sup/Res");
     return _strat;
   }
 
@@ -138,7 +138,7 @@ class Stg_MA_Cross_Sup_Res : public Strategy {
    */
   void OnInit() {
     // Initialize indicators.
-    switch (MA_Cross_Sup_Res_Type) {
+    switch (::MA_Cross_Sup_Res_Type) {
       case STG_MA_CROSS_SUP_RES_TYPE_AMA:  // AMA
       {
         IndiAMAParams _indi_params(
